@@ -32,6 +32,8 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 }
 .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cover span{position:relative;color:#fff;font-weight:700;font-size:1.05rem;line-height:1.2;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.cover.con-imagen::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7),rgba(0,0,0,0) 55%)}
+.cover span{z-index:1}
 .card:hover .cover,.card:focus-visible .cover{transform:translateY(-6px) scale(1.03);box-shadow:0 14px 28px var(--shadow)}
 .card:focus-visible{outline:none}
 .card:focus-visible .cover{outline:3px solid var(--fg)}
@@ -69,7 +71,10 @@ const items = [
 ];
 
 const grid = document.getElementById("grid");
-items.forEach(it => {
+items
+  .filter(it => it.titulo)
+  .sort((a, b) => a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base", numeric: true }))
+  .forEach(it => {
   const a = document.createElement("a");
   a.className = "card";
   a.href = it.url;
@@ -83,8 +88,12 @@ items.forEach(it => {
     const img = document.createElement("img");
     img.src = it.img; img.alt = it.titulo;
     cover.appendChild(img);
+    cover.classList.add("con-imagen");
   } else {
-    cover.style.background = `linear-gradient(160deg, ${it.colores[0]}, ${it.colores[1]})`;
+    const c = it.colores || ["#555", "#222"];
+    cover.style.background = `linear-gradient(160deg, ${c[0]}, ${c[1]})`;
+  }
+  if (!it.ocultarTitulo) {
     const s = document.createElement("span");
     s.textContent = it.titulo;
     cover.appendChild(s);
