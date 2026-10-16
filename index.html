@@ -20,11 +20,11 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 /* Fondo de la página: cambia wallpaper.jpg por otra imagen o ajusta la opacidad del degradado. */
 body{margin:0;background-color:#17161a;background-image:linear-gradient(rgba(23, 22, 26, 0.404),rgba(23, 22, 26, 0.404)),url("wallpaper.jpg");background-position:center;background-size:cover;background-attachment:fixed;color:#f2efe9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-/* Ancho y espaciado del encabezado; main controla por separado la cuadrícula. */
+/* Ancho y espaciado del encabezado; los controles de música quedan arriba a la derecha. */
 header{max-width:1100px;margin:0 auto;padding:40px 20px 8px;position:relative}
 h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem);color:#ff6b6b;animation:color-cambiante 5s linear infinite}
 header p{margin:0;color:#fff}
-#music-controls{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(23,22,26,.88);color:#fff}
+#music-controls{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(23,22,26,.75);color:#fff}
 #music-toggle{border:1px solid rgba(255,255,255,.55);border-radius:6px;padding:7px 10px;background:transparent;color:#fff;font:inherit;font-size:.9rem;cursor:pointer;white-space:nowrap}
 #music-toggle:hover,#music-toggle:focus-visible{background:#ff6b6b;color:#17161a}
 #music-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
@@ -60,6 +60,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 </style>
 </head>
 <body>
+<!-- Cambia musica-web.mp3 por otra pista local si quieres usar una música distinta. -->
 <audio id="background-music" src="musica-web.mp3" loop preload="auto" autoplay></audio>
 <header>
   <div id="music-controls">
@@ -84,6 +85,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 const backgroundMusic = document.getElementById("background-music");
 const musicToggle = document.getElementById("music-toggle");
 const musicVolume = document.getElementById("music-volume");
+// Aplica al reproductor el valor inicial del deslizador: 50 %.
 backgroundMusic.volume = Number(musicVolume.value) / 100;
 
 function updateMusicButton() {
@@ -117,6 +119,7 @@ musicVolume.addEventListener("input", () => {
 backgroundMusic.addEventListener("play", updateMusicButton);
 backgroundMusic.addEventListener("pause", updateMusicButton);
 backgroundMusic.addEventListener("volumechange", updateMusicButton);
+// Si el navegador bloquea el autoplay con sonido, intenta iniciar la pista silenciada.
 backgroundMusic.play().catch(async () => {
   backgroundMusic.muted = true;
   try {
