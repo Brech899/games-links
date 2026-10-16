@@ -21,9 +21,16 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 /* Fondo de la página: cambia wallpaper.jpg por otra imagen o ajusta la opacidad del degradado. */
 body{margin:0;background-color:#17161a;background-image:linear-gradient(rgba(23, 22, 26, 0.404),rgba(23, 22, 26, 0.404)),url("wallpaper.jpg");background-position:center;background-size:cover;background-attachment:fixed;color:#f2efe9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 /* Ancho y espaciado del encabezado; main controla por separado la cuadrícula. */
-header{max-width:1100px;margin:0 auto;padding:40px 20px 8px}
+header{max-width:1100px;margin:0 auto;padding:40px 20px 8px;position:relative}
 h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem);color:#ff6b6b;animation:color-cambiante 5s linear infinite}
 header p{margin:0;color:#fff}
+#music-controls{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(23,22,26,.88);color:#fff}
+#music-toggle{border:1px solid rgba(255,255,255,.55);border-radius:6px;padding:7px 10px;background:transparent;color:#fff;font:inherit;font-size:.9rem;cursor:pointer;white-space:nowrap}
+#music-toggle:hover,#music-toggle:focus-visible{background:#ff6b6b;color:#17161a}
+#music-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#music-volume-label{font-size:.8rem;white-space:nowrap}
+#music-volume{width:88px;accent-color:#ff6b6b;cursor:pointer}
+@media (max-width:520px){header{padding-top:68px}#music-controls{left:20px;right:20px;justify-content:flex-end}#music-volume{width:74px}}
 @keyframes color-cambiante{
   0%,100%{color:#ff6b6b}
   20%{color:#ffd166}
@@ -53,7 +60,13 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 </style>
 </head>
 <body>
+<audio id="background-music" src="musica-web.mp3" loop preload="auto" autoplay></audio>
 <header>
+  <div id="music-controls">
+    <button id="music-toggle" type="button" aria-pressed="false" aria-label="Activar música">♫ Activar música</button>
+    <label id="music-volume-label" for="music-volume">Volumen</label>
+    <input id="music-volume" type="range" min="0" max="100" value="50" aria-label="Volumen de la música">
+  </div>
   <div style="display: flex; align-items: center; gap: 10px;">
     <!-- Cambia el enlace y la imagen para personalizar el logo del encabezado. -->
     <a href="https://www.roblox.com/es/games/4588604953/Criminality" target="_blank" rel="noopener noreferrer" aria-label="Abrir Criminality en Roblox">
@@ -68,6 +81,51 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 <main id="grid"></main>
 
 <script>
+const backgroundMusic = document.getElementById("background-music");
+const musicToggle = document.getElementById("music-toggle");
+const musicVolume = document.getElementById("music-volume");
+backgroundMusic.volume = Number(musicVolume.value) / 100;
+
+function updateMusicButton() {
+  const isAudible = !backgroundMusic.paused && !backgroundMusic.muted;
+  musicToggle.textContent = isAudible ? "♫ Pausar música" : "♫ Activar música";
+  musicToggle.setAttribute("aria-label", isAudible ? "Pausar música" : "Activar música");
+  musicToggle.setAttribute("aria-pressed", String(isAudible));
+}
+
+musicToggle.addEventListener("click", async () => {
+  if (!backgroundMusic.paused && !backgroundMusic.muted) {
+    backgroundMusic.pause();
+    return;
+  }
+
+  backgroundMusic.muted = false;
+  try {
+    await backgroundMusic.play();
+    updateMusicButton();
+  } catch (error) {
+    updateMusicButton();
+  }
+});
+
+musicVolume.addEventListener("input", () => {
+  backgroundMusic.volume = Number(musicVolume.value) / 100;
+  if (backgroundMusic.volume > 0 && !backgroundMusic.paused) backgroundMusic.muted = false;
+  updateMusicButton();
+});
+
+backgroundMusic.addEventListener("play", updateMusicButton);
+backgroundMusic.addEventListener("pause", updateMusicButton);
+backgroundMusic.addEventListener("volumechange", updateMusicButton);
+backgroundMusic.play().catch(async () => {
+  backgroundMusic.muted = true;
+  try {
+    await backgroundMusic.play();
+  } catch (error) {
+    updateMusicButton();
+  }
+});
+
 // EDITA AQUÍ: título, enlace (url) y color (o imagen si la tienes incrustada)
   // { titulo: "", url: "", img: "", ocultarTitulo: false },
 const items = [
