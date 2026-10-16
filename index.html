@@ -72,6 +72,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 .card:focus-visible{outline:none}
 .card:focus-visible .cover{outline:3px solid var(--fg)}
 .caption{margin-top:10px;font-size:.9rem;color:var(--muted);text-align:center}
+.letter-heading{grid-column:1/-1;margin:10px 0 0;padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.35);color:#ffd166;font-size:1.25rem}
 #page-end-image{max-width:1100px;margin:0 auto;padding:0 20px 20px;display:flex;justify-content:flex-end}
 #page-end-image img{display:block;width:min(200px,38vw);height:auto;animation:image-jump 1s ease-in-out infinite}
 @keyframes image-jump{
@@ -218,10 +219,22 @@ const items = [
 
 const grid = document.getElementById("grid");
 // Se descartan las entradas vacías, se ordenan alfabéticamente y se construye una tarjeta por juego.
+let currentLetter = "";
 items
   .filter(it => it.titulo)
   .sort((a, b) => a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base", numeric: true }))
   .forEach(it => {
+  const firstLetter = it.titulo.charAt(0).toLocaleUpperCase("es");
+  const normalizedLetter = firstLetter === "Ñ" ? "Ñ" : firstLetter.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const letter = /^[A-ZÑ]$/.test(normalizedLetter) ? normalizedLetter : "#";
+  if (letter !== currentLetter) {
+    const heading = document.createElement("h2");
+    heading.className = "letter-heading";
+    heading.textContent = letter;
+    grid.appendChild(heading);
+    currentLetter = letter;
+  }
+
   const a = document.createElement("a");
   a.className = "card";
   a.href = it.url;
