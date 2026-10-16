@@ -47,6 +47,15 @@ header p{margin:0;color:#fff}
 @media (prefers-reduced-motion: reduce){#welcome-overlay{transition:none}}
 main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:22px}
+.notice{width:min(620px,calc(100% - 32px));max-height:calc(100% - 32px);margin:auto;padding:22px;border:1px solid rgba(255,255,255,.25);border-left:4px solid #ff6b6b;border-radius:8px;background:rgba(0,0,0,.65);color:#f2efe9;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+.notice::backdrop{background:rgba(0,0,0,.76);backdrop-filter:blur(3px)}
+.notice h2{margin:0 0 10px;color:#ffd166;font-size:1.2rem}
+.notice p{margin:8px 0;line-height:1.6}
+.notice p:last-child{margin-bottom:0}
+.notice-actions{display:flex;justify-content:flex-end;margin-top:18px}
+.notice-close{border:0;border-radius:6px;padding:9px 18px;background:#ff6b6b;color:#17161a;font:inherit;font-weight:700;cursor:pointer}
+.notice-close:hover,.notice-close:focus-visible{background:#ffd166}
+.notice-close:focus-visible{outline:2px solid #fff;outline-offset:3px}
 /* Estilos de cada tarjeta y su portada. */
 .card{display:block;text-decoration:none;color:inherit}
 .cover{
@@ -91,13 +100,22 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
   </div>
 </header>
 <main id="grid"></main>
+<dialog class="notice" id="notice-dialog" aria-labelledby="notice-title">
+    <h2 id="notice-title">Leer Atentamente 👀</h2>
+    <p>Esta página fue creada para la comunidad de <strong>MierdiBoys</strong>, pero si no formas parte de ella, no importa; de todas formas, te invito a leer lo siguiente.</p>
+    <p>Se recomienda visitar <strong>elenemigos.com</strong>, ya que la mayoría de los juegos disponibles en esta página provienen de allí.</p>
+    <p>Por último, ten en cuenta que este sitio web fue desarrollado mediante <em>vibecoding</em>, por lo que existe una alta probabilidad de que encuentres errores (<em>bugs</em>) o problemas de funcionamiento.</p>
+    <form method="dialog" class="notice-actions"><button class="notice-close" type="submit">Cerrar</button></form>
+</dialog>
 
 <script>
 const welcomeOverlay = document.getElementById("welcome-overlay");
+const noticeDialog = document.getElementById("notice-dialog");
 const introDuration = 1510;
 const introFadeDuration = 350;
 window.setTimeout(() => welcomeOverlay.classList.add("is-leaving"), introDuration - introFadeDuration);
 window.setTimeout(() => { welcomeOverlay.hidden = true; }, introDuration);
+window.setTimeout(() => noticeDialog.showModal(), introDuration);
 
 const backgroundMusic = document.getElementById("background-music");
 const musicToggle = document.getElementById("music-toggle");
