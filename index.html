@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mierdiboys-Games</title>
 <style>
+/* Colores reutilizables del tema. Puedes ajustar estos valores para cambiar la apariencia general. */
 :root{
   --bg:#f6f4ef; --fg:#1d1b18; --muted:#6b665e; --shadow:rgba(0,0,0,.18);
   box-sizing:border-box;
@@ -17,8 +18,9 @@
 :root[data-theme="dark"]{--bg:#17161a; --fg:#f2efe9; --muted:#a29d94; --shadow:rgba(0,0,0,.6);}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-/* Configuracion del fondo */
+/* Fondo de la página: cambia wallpaper.jpg por otra imagen o ajusta la opacidad del degradado. */
 body{margin:0;background-color:#17161a;background-image:linear-gradient(rgba(23, 22, 26, 0.404),rgba(23, 22, 26, 0.404)),url("wallpaper.jpg");background-position:center;background-size:cover;background-attachment:fixed;color:#f2efe9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+/* Ancho y espaciado del encabezado; main controla por separado la cuadrícula. */
 header{max-width:1100px;margin:0 auto;padding:40px 20px 8px}
 h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem);color:#ff6b6b;animation:color-cambiante 5s linear infinite}
 header p{margin:0;color:#fff}
@@ -32,6 +34,7 @@ header p{margin:0;color:#fff}
 @media (prefers-reduced-motion: reduce){h1{animation:none}}
 main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:22px}
+/* Estilos de cada tarjeta y su portada. */
 .card{display:block;text-decoration:none;color:inherit}
 .cover{
   aspect-ratio:2/3;border-radius:12px;overflow:hidden;position:relative;
@@ -52,6 +55,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 <body>
 <header>
   <div style="display: flex; align-items: center; gap: 10px;">
+    <!-- Cambia el enlace y la imagen para personalizar el logo del encabezado. -->
     <a href="https://www.roblox.com/es/games/4588604953/Criminality" target="_blank" rel="noopener noreferrer" aria-label="Abrir Criminality en Roblox">
       <img src="https://b3801007.assetcdn.net/3801007/wp-content/uploads/2022/04/Biological-explanations-of-criminality.jpg?lossy=2&strip=1&webp=1" alt="Logo de Mierdiboys-Games" width="80" height="80" style="border-radius: 50%;">
     </a>
@@ -107,6 +111,7 @@ const items = [
 ];
 
 const grid = document.getElementById("grid");
+// Se descartan las entradas vacías, se ordenan alfabéticamente y se construye una tarjeta por juego.
 items
   .filter(it => it.titulo)
   .sort((a, b) => a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base", numeric: true }))
@@ -120,6 +125,7 @@ items
 
   const cover = document.createElement("div");
   cover.className = "cover";
+  // Si hay imagen se muestra en la portada; de lo contrario se usa el degradado de colores.
   if (it.img) {
     const img = document.createElement("img");
     img.src = it.img; img.alt = it.titulo;
