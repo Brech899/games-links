@@ -72,6 +72,13 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 .card:focus-visible{outline:none}
 .card:focus-visible .cover{outline:3px solid var(--fg)}
 .caption{margin-top:10px;font-size:.9rem;color:var(--muted);text-align:center}
+#page-end-image{max-width:1100px;margin:0 auto;padding:0 20px 20px;display:flex;justify-content:flex-end}
+#page-end-image img{display:block;width:min(200px,38vw);height:auto;animation:image-jump 1s ease-in-out infinite}
+@keyframes image-jump{
+  0%,50%,100%{transform:translateY(0)}
+  25%,75%{transform:translateY(-18px)}
+}
+@media (prefers-reduced-motion: reduce){#page-end-image img{animation:none}}
 </style>
 </head>
 <body>
@@ -107,6 +114,9 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
     <p>Por último, ten en cuenta que este sitio web fue desarrollado mediante <em>vibecoding</em>, por lo que existe una alta probabilidad de que encuentres errores (<em>bugs</em>) o problemas de funcionamiento.</p>
     <form method="dialog" class="notice-actions"><button class="notice-close" type="submit">Cerrar</button></form>
 </dialog>
+<footer id="page-end-image">
+  <img src="https://tr.rbxcdn.com/180DAY-89113e09c3c68491641d9d475e485b9d/420/420/BackAccessory/Webp/noFilter" alt="">
+</footer>
 
 <script>
 const welcomeOverlay = document.getElementById("welcome-overlay");
