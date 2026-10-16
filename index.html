@@ -74,12 +74,16 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 .caption{margin-top:10px;font-size:.9rem;color:var(--muted);text-align:center}
 .letter-heading{grid-column:1/-1;margin:10px 0 0;padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.35);color:#ffd166;font-size:1.25rem}
 #page-end-image{max-width:1100px;margin:0 auto;padding:0 20px 20px;display:flex;justify-content:flex-end}
-#page-end-image img{display:block;width:min(200px,38vw);height:auto;animation:image-jump 1s ease-in-out infinite}
+#cat-message{display:flex;align-items:flex-start;gap:10px;animation:image-jump 1s ease-in-out infinite}
+#cat-message img{display:block;width:min(200px,38vw);height:auto;cursor:pointer}
+#cat-message img:focus-visible{outline:3px solid #ffd166;outline-offset:3px}
+#cat-message span{position:relative;max-width:min(180px,46vw);margin-top:10px;padding:10px 13px;border-radius:14px;background:#fff;color:#17161a;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#cat-message span::after{content:"";position:absolute;right:-8px;top:18px;border:8px solid transparent;border-left-color:#fff;border-right:0}
 @keyframes image-jump{
   0%,50%,100%{transform:translateY(0)}
   25%,75%{transform:translateY(-18px)}
 }
-@media (prefers-reduced-motion: reduce){#page-end-image img{animation:none}}
+@media (prefers-reduced-motion: reduce){#cat-message{animation:none}}
 </style>
 </head>
 <body>
@@ -116,12 +120,37 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
     <form method="dialog" class="notice-actions"><button class="notice-close" type="submit">Cerrar</button></form>
 </dialog>
 <footer id="page-end-image">
-  <img src="https://tr.rbxcdn.com/180DAY-89113e09c3c68491641d9d475e485b9d/420/420/BackAccessory/Webp/noFilter" alt="">
+  <div id="cat-message">
+    <span id="cat-message-text" aria-live="polite">I love elenemigos</span>
+    <img id="cat-message-image" src="https://tr.rbxcdn.com/180DAY-89113e09c3c68491641d9d475e485b9d/420/420/BackAccessory/Webp/noFilter" alt="Gato, haz clic para cambiar el mensaje" role="button" tabindex="0" aria-label="Cambiar mensaje del gato">
+  </div>
 </footer>
 
 <script>
 const welcomeOverlay = document.getElementById("welcome-overlay");
 const noticeDialog = document.getElementById("notice-dialog");
+const catMessageImage = document.getElementById("cat-message-image");
+const catMessageText = document.getElementById("cat-message-text");
+const catMessages = [
+  "Recuerda visitar elenemigos.com",
+  "Criminality V3 fueron amigos que hicimos en el camino",
+  "LARPER",
+  "I use Arch btw",
+  "Arroz con huevo",
+  "Cambiate a linux",
+];
+function changeCatMessage() {
+  const availableMessages = catMessages.filter(message => message !== catMessageText.textContent);
+  catMessageText.textContent = availableMessages[Math.floor(Math.random() * availableMessages.length)];
+}
+catMessageImage.addEventListener("click", changeCatMessage);
+catMessageImage.addEventListener("keydown", event => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    changeCatMessage();
+  }
+});
+
 const introDuration = 1510;
 const introFadeDuration = 350;
 window.setTimeout(() => welcomeOverlay.classList.add("is-leaving"), introDuration - introFadeDuration);
