@@ -145,11 +145,21 @@ function changeCatMessage() {
   const availableMessages = catMessages.filter(message => message !== catMessageText.textContent);
   catMessageText.textContent = availableMessages[Math.floor(Math.random() * availableMessages.length)];
 }
-catMessageImage.addEventListener("click", changeCatMessage);
+const catSound = new Audio("meow.mp3");
+catSound.volume = 0.6;
+function playCatSound() {
+  catSound.currentTime = 0;
+  catSound.play().catch(() => {});
+}
+function activateCat() {
+  playCatSound();
+  changeCatMessage();
+}
+catMessageImage.addEventListener("click", activateCat);
 catMessageImage.addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
-    changeCatMessage();
+    activateCat();
   }
 });
 
