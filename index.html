@@ -146,7 +146,7 @@ function changeCatMessage() {
   catMessageText.textContent = availableMessages[Math.floor(Math.random() * availableMessages.length)];
 }
 const catSound = new Audio("meow.mp3");
-catSound.volume = 0.2;
+catSound.volume = 0.1;
 function playCatSound() {
   catSound.currentTime = 0;
   catSound.play().catch(() => {});
