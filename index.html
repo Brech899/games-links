@@ -20,6 +20,9 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 /* Fondo de la página: cambia wallpaper.jpg por otra imagen o ajusta la opacidad del degradado. */
 body{margin:0;background-color:#17161a;background-image:linear-gradient(rgba(23, 22, 26, 0.404),rgba(23, 22, 26, 0.404)),url("wallpaper.jpg");background-position:center;background-size:cover;background-attachment:fixed;color:#f2efe9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#background-video{position:fixed;inset:-4px;z-index:0;width:calc(100% + 8px);height:calc(100% + 8px);object-fit:cover;filter:brightness(.45) blur(0px);pointer-events:none}
+body>header,body>main,body>footer{position:relative;z-index:1}
+@media (prefers-reduced-motion: reduce){#background-video{display:none}}
 /* Ancho y espaciado del encabezado; los controles de música quedan arriba a la derecha. */
 header{max-width:1100px;margin:0 auto;padding:40px 20px 8px;position:relative}
 h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem);color:#ff6b6b;animation:color-cambiante 5s linear infinite}
@@ -87,6 +90,9 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 </style>
 </head>
 <body>
+<video id="background-video" autoplay muted loop playsinline preload="metadata" poster="wallpaper.jpg" aria-hidden="true">
+  <source src="fondo.mp4" type="video/mp4">
+</video>
 <div id="welcome-overlay" aria-hidden="true">
   <div class="welcome-content">
     <img src="https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/da/9d/Ecmn5sEHLxXrg3.gif" alt="Esqueleto corriendo">
@@ -128,6 +134,7 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
 
 <script>
 const welcomeOverlay = document.getElementById("welcome-overlay");
+const backgroundVideo = document.getElementById("background-video");
 const noticeDialog = document.getElementById("notice-dialog");
 const catMessageImage = document.getElementById("cat-message-image");
 const catMessageText = document.getElementById("cat-message-text");
@@ -141,6 +148,10 @@ const catMessages = [
   "Do you like hurting other people?",
   "Luis es muy Tsundere",
 ];
+if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  backgroundVideo.pause();
+  backgroundVideo.removeAttribute("autoplay");
+}
 function changeCatMessage() {
   const availableMessages = catMessages.filter(message => message !== catMessageText.textContent);
   catMessageText.textContent = availableMessages[Math.floor(Math.random() * availableMessages.length)];
@@ -262,7 +273,7 @@ const items = [
   { titulo: "Call of Duty®: Modern Warfare® 4", url: "https://itsfileditchfiles.st/echo2/611ccdf1d0325bb7d877/Call%20of%20Duty%20Modern%20Warfare%204_b25909941_ElEnemigos.rar", img: "https://i.3djuegos.com/juegos/20984/call_of_duty_modern_warfare_4/fotos/ficha/call_of_duty_modern_warfare_4-6025858.jpg", ocultarTitulo: false },
   { titulo: "Buckshot Roulette", url: "https://www.mediafire.com/file/25j2aokco2zld3o/Buckshot+Roulette_v2.1.0_ElEnemigos.rar/file", img: "https://i.pinimg.com/736x/28/ac/14/28ac14fffd0474e55acced76664cee8a.jpg", ocultarTitulo: false },
   { titulo: "The Binding of Isaac: Rebirth Android", url: "https://gofile.io/d/quDq3s7P", img: "15.png", ocultarTitulo: false },
-  { titulo: "Rayman Legends", url: "https://www.mediafire.com/file/rykm5aw80ml7r2p/Rayman+Legends_v1.3.140380_ElEnemigos.rar/file", img: "https://static.wikia.nocookie.net/doblaje-fanon/images/4/44/Rayman_Legends_PC_Cover.jpg/revision/latest?cb=20200215155359&path-prefix=es", ocultarTitulo: false },
+  { titulo: "Rayman Legends", url: "https://www.mediafire.com/file/rykm5aw80ml7r2p/Rayman+Legends_v1.3.140380_ElEnemigos.rar/file", img: "https://i.redd.it/1wjbp1dm7plg1.png", ocultarTitulo: false },
   { titulo: "", url: "", img: "", ocultarTitulo: false },
   { titulo: "", url: "", img: "", ocultarTitulo: false },
   { titulo: "", url: "", img: "", ocultarTitulo: false },
