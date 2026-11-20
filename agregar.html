@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agregar carátula</title>
+<style>
+:root{
+  --bg:#f6f4ef; --fg:#1d1b18; --muted:#6b665e; --shadow:rgba(0,0,0,.18);
+  --card:#ffffff; --line:#d9d5cc; --accent:#2f6fed; --warn:#b3261e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#17161a; --fg:#f2efe9; --muted:#a29d94; --shadow:rgba(0,0,0,.6); --card:#222127; --line:#3a3841; --accent:#6c9bff; --warn:#ff8a80;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 20px 56px;display:grid;gap:28px;grid-template-columns:1fr}
+@media (min-width:760px){.wrap{grid-template-columns:1fr 220px;align-items:start}}
+.volver{display:inline-block;margin-bottom:14px;color:var(--muted);font-size:.9rem}
+h1{margin:0 0 4px;font-size:1.6rem}
+.sub{margin:0 0 20px;color:var(--muted)}
+label{display:block;font-weight:600;margin:14px 0 6px}
+input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit}
+input[type=text]:focus{outline:2px solid var(--accent);border-color:transparent}
+.check{display:flex;gap:8px;align-items:center;margin:16px 0 0;font-weight:400}
+.warn{color:var(--warn);font-size:.85rem;margin:6px 0 0;min-height:1.1em}
+.out{margin-top:20px}
+textarea{width:100%;height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:.85rem ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.btns{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+button{padding:10px 16px;border:0;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:#fff}
+button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.msg{margin-top:8px;color:var(--muted);font-size:.9rem;min-height:1.2em}
+.prev h2{margin:0 0 10px;font-size:1rem;color:var(--muted);font-weight:600}
+.cover{aspect-ratio:2/3;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 6px 18px var(--shadow);display:flex;align-items:flex-end;padding:14px;background:linear-gradient(160deg,#555,#222)}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover.con-imagen::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7),rgba(0,0,0,0) 55%)}
+.cover span{position:relative;z-index:1;color:#fff;font-weight:700;font-size:1.05rem;line-height:1.2;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.cover .nota{position:absolute;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:#fff;font-size:.85rem;z-index:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section>
+    <a class="volver" href="index.html">← Volver a los juegos</a>
+    <h1>Agregar carátula</h1>
+    <!-- p class="sub">Rellena los datos, copia la línea y pégala en la lista <code>items</code> de tu <code>index.html</code>.</p -->
+
+    <label for="titulo">Título del juego</label>
+    <input type="text" id="titulo" placeholder="Ej: Celeste" autocomplete="off">
+
+    <label for="url">Enlace de descarga</label>
+    <input type="text" id="url" placeholder="https://..." autocomplete="off">
+    <div class="warn" id="warnUrl"></div>
+
+    <label for="img">Enlace directo de la imagen</label>
+    <input type="text" id="img" placeholder="https://i.imgur.com/xxxx.jpg" autocomplete="off">
+    <div class="warn" id="warnImg"></div>
+
+    <label class="check"><input type="checkbox" id="ocultar"> Ocultar el título sobre la carátula</label>
+
+    <div class="out">
+      <label for="linea">Línea para pegar</label>
+      <textarea id="linea" readonly></textarea>
+      <div class="btns">
+        <button id="copiar">Copiar línea</button>
+        <button class="sec" id="limpiar">Limpiar</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </section>
+
+  <aside class="prev">
+    <h2>Vista previa</h2>
+    <div id="preview"></div>
+  </aside>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => s.trim().replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+function linea() {
+  const t = esc($("titulo").value), u = esc($("url").value), i = esc($("img").value);
+  return `  { titulo: "${t}", url: "${u}", img: "${i}", ocultarTitulo: ${$("ocultar").checked} },`;
+}
+
+function avisoHttps(valor, el) {
+  const v = valor.trim();
+  el.textContent = v && !/^https:\/\//i.test(v) ? "Debe empezar con https://" : "";
+}
+
+let ultimaImg = null;
+function dibujarPreview() {
+  const cont = $("preview");
+  const t = $("titulo").value.trim(), i = $("img").value.trim();
+  cont.textContent = "";
+  const cover = document.createElement("div");
+  cover.className = "cover";
+  if (i) {
+    const img = document.createElement("img");
+    img.alt = t;
+    img.onerror = () => {
+      img.remove();
+      cover.classList.remove("con-imagen");
+      const n = document.createElement("div");
+      n.className = "nota";
+      n.textContent = "No se pudo cargar la imagen. Revisa que sea un enlace directo.";
+      cover.appendChild(n);
+    };
+    img.src = i;
+    cover.appendChild(img);
+    cover.classList.add("con-imagen");
+  }
+  if (!$("ocultar").checked && t) {
+    const s = document.createElement("span");
+    s.textContent = t;
+    cover.appendChild(s);
+  }
+  cont.appendChild(cover);
+}
+
+function actualizar(cambioImg) {
+  $("linea").value = linea();
+  avisoHttps($("url").value, $("warnUrl"));
+  avisoHttps($("img").value, $("warnImg"));
+  $("msg").textContent = "";
+  dibujarPreview();
+}
+
+["titulo", "url", "img"].forEach(id => $(id).addEventListener("input", actualizar));
+$("ocultar").addEventListener("change", actualizar);
+
+$("copiar").addEventListener("click", async () => {
+  const texto = $("linea").value;
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch (e) {
+    $("linea").select();
+    document.execCommand("copy");
+  }
+  $("msg").textContent = "Línea copiada. Pégala dentro de la lista items.";
+});
+
+$("limpiar").addEventListener("click", () => {
+  ["titulo", "url", "img"].forEach(id => $(id).value = "");
+  $("ocultar").checked = false;
+  actualizar();
+});
+
+actualizar();
+</script>
+</body>
+</html>
