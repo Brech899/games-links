@@ -38,6 +38,10 @@ button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cover.con-imagen::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7),rgba(0,0,0,0) 55%)}
 .cover span{position:relative;z-index:1;color:#fff;font-weight:700;font-size:1.05rem;line-height:1.2;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.msg.ok{color:#2e7d32}
+.msg.err{color:var(--warn)}
+button:disabled{opacity:.6;cursor:wait}
 .cover .nota{position:absolute;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:#fff;font-size:.85rem;z-index:2}
 </style>
 </head>
@@ -46,7 +50,7 @@ button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
   <section>
     <a class="volver" href="index.html">← Volver a los juegos</a>
     <h1>Agregar carátula</h1>
-    <!-- p class="sub">Rellena los datos, copia la línea y pégala en la lista <code>items</code> de tu <code>index.html</code>.</p -->
+    <p class="sub">Rellena los datos y envíalos: tu carátula llegará a nuestro Discord para que la revisemos y la agreguemos a la página.</p>
 
     <label for="titulo">Título del juego</label>
     <input type="text" id="titulo" placeholder="Ej: Celeste" autocomplete="off">
@@ -59,13 +63,18 @@ button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
     <input type="text" id="img" placeholder="https://i.imgur.com/xxxx.jpg" autocomplete="off">
     <div class="warn" id="warnImg"></div>
 
+    <label for="autor">Tu nombre o usuario de Discord (opcional)</label>
+    <input type="text" id="autor" placeholder="Ej: juanito#1234" autocomplete="off" maxlength="60">
+    <input type="text" id="web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
     <label class="check"><input type="checkbox" id="ocultar"> Ocultar el título sobre la carátula</label>
 
     <div class="out">
       <label for="linea">Línea para pegar</label>
       <textarea id="linea" readonly></textarea>
       <div class="btns">
-        <button id="copiar">Copiar línea</button>
+        <button id="enviar">Enviar a Discord</button>
+        <button class="sec" id="copiar">Copiar línea</button>
         <button class="sec" id="limpiar">Limpiar</button>
       </div>
       <div class="msg" id="msg"></div>
@@ -126,7 +135,7 @@ function actualizar(cambioImg) {
   $("linea").value = linea();
   avisoHttps($("url").value, $("warnUrl"));
   avisoHttps($("img").value, $("warnImg"));
-  $("msg").textContent = "";
+  setMsg("");
   dibujarPreview();
 }
 
@@ -148,6 +157,98 @@ $("limpiar").addEventListener("click", () => {
   ["titulo", "url", "img"].forEach(id => $(id).value = "");
   $("ocultar").checked = false;
   actualizar();
+});
+
+
+// ====== ENVÍO A DISCORD ======
+// Pega aquí la URL del webhook de tu canal (Ajustes del canal > Integraciones > Webhooks).
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1573799063906820196/TqiL94cHVyvRVT8M5N1ExaUlTYnpQ-E1D9kly_99Z9w696BhDmsnXhLTlOWW5z086P6O";
+const ESPERA_SEG = 60; // tiempo mínimo entre envíos desde el mismo navegador
+
+function setMsg(texto, tipo) {
+  const m = $("msg");
+  m.textContent = texto;
+  m.className = "msg" + (tipo ? " " + tipo : "");
+}
+
+function esHttps(v) {
+  try { return new URL(v.trim()).protocol === "https:"; } catch (e) { return false; }
+}
+
+function segundosRestantes() {
+  try {
+    const ult = Number(localStorage.getItem("ultimoEnvio") || 0);
+    return Math.max(0, Math.ceil((ult + ESPERA_SEG * 1000 - Date.now()) / 1000));
+  } catch (e) { return 0; }
+}
+
+$("enviar").addEventListener("click", async () => {
+  if ($("web").value) return; // honeypot: los bots lo rellenan
+  const titulo = $("titulo").value.trim(), url = $("url").value.trim(), img = $("img").value.trim();
+  const autor = $("autor").value.trim();
+
+  if (!titulo) return setMsg("Escribe el título del juego.", "err");
+  if (!esHttps(url)) return setMsg("El enlace de descarga debe ser un enlace válido que empiece con https://", "err");
+  if (!esHttps(img)) return setMsg("El enlace de la imagen debe ser un enlace válido que empiece con https://", "err");
+  if (WEBHOOK_URL === "PEGA_AQUI_TU_WEBHOOK") return setMsg("Falta configurar el webhook de Discord en el código (WEBHOOK_URL).", "err");
+
+  const resto = segundosRestantes();
+  if (resto > 0) return setMsg("Espera " + resto + " s antes de enviar otra carátula.", "err");
+
+  const fence = "\x60\x60\x60";
+  const codigo = linea().split(fence).join("'''");
+  const fields = [
+    { name: "Título", value: titulo.slice(0, 1024) },
+    { name: "Enlace de descarga", value: url.slice(0, 1024) },
+    { name: "Título sobre la carátula", value: $("ocultar").checked ? "Oculto" : "Visible", inline: true }
+  ];
+  if (autor) fields.push({ name: "Enviado por", value: autor.slice(0, 100), inline: true });
+
+  const payload = {
+    username: "Carátulas",
+    allowed_mentions: { parse: [] },
+    embeds: [{
+      title: titulo.slice(0, 256),
+      url: url,
+      description: fence + "js\n" + codigo + "\n" + fence,
+      color: 0x2f6fed,
+      fields: fields,
+      image: { url: img },
+      timestamp: new Date().toISOString()
+    }]
+  };
+
+  const btn = $("enviar");
+  btn.disabled = true;
+  setMsg("Enviando…");
+  try {
+    const r = await fetch(WEBHOOK_URL.trim(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) {
+      let detalle = "";
+      try { detalle = (await r.text()).slice(0, 300); } catch (e2) {}
+      const err = new Error("HTTP " + r.status);
+      err.status = r.status;
+      err.detalle = detalle;
+      throw err;
+    }
+    try { localStorage.setItem("ultimoEnvio", String(Date.now())); } catch (e) {}
+    setMsg("¡Enviado! Gracias, revisaremos tu carátula.", "ok");
+  } catch (e) {
+    console.error("Error al enviar a Discord:", e, e.detalle || "");
+    let txt;
+    if (e.status === 404 || e.status === 401) txt = "Discord no reconoce el webhook (" + e.status + "). Revisa que la URL esté completa y bien copiada, y que el webhook no haya sido borrado.";
+    else if (e.status === 400) txt = "Discord rechazó los datos (400): " + (e.detalle || "sin detalle");
+    else if (e.status === 429) txt = "Demasiados envíos seguidos. Espera un momento e inténtalo otra vez.";
+    else if (e.status) txt = "Discord respondió con error " + e.status + ". " + (e.detalle || "");
+    else txt = "No se pudo conectar con Discord. Puede ser la conexión o una extensión (bloqueador de anuncios) que bloquea la petición.";
+    setMsg(txt, "err");
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 actualizar();
