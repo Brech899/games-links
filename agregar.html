@@ -160,9 +160,9 @@ $("limpiar").addEventListener("click", () => {
 });
 
 
-// ====== ENVÍO A DISCORD ======
-// Pega aquí la URL del webhook de tu canal (Ajustes del canal > Integraciones > Webhooks).
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1573799063906820196/TqiL94cHVyvRVT8M5N1ExaUlTYnpQ-E1D9kly_99Z9w696BhDmsnXhLTlOWW5z086P6O";
+// ====== ENVÍO A DISCORD (a través de tu Cloudflare Worker) ======
+// Pega aquí la URL de tu Worker, por ejemplo: https://caratulas.tuusuario.workers.dev
+const WORKER_URL = "https://caratulas.bherxzzz.workers.dev";
 const ESPERA_SEG = 60; // tiempo mínimo entre envíos desde el mismo navegador
 
 function setMsg(texto, tipo) {
@@ -190,61 +190,37 @@ $("enviar").addEventListener("click", async () => {
   if (!titulo) return setMsg("Escribe el título del juego.", "err");
   if (!esHttps(url)) return setMsg("El enlace de descarga debe ser un enlace válido que empiece con https://", "err");
   if (!esHttps(img)) return setMsg("El enlace de la imagen debe ser un enlace válido que empiece con https://", "err");
-  if (WEBHOOK_URL === "PEGA_AQUI_TU_WEBHOOK") return setMsg("Falta configurar el webhook de Discord en el código (WEBHOOK_URL).", "err");
+  if (WORKER_URL === "PEGA_AQUI_LA_URL_DE_TU_WORKER") return setMsg("Falta configurar la URL del Worker en el código (WORKER_URL).", "err");
 
   const resto = segundosRestantes();
   if (resto > 0) return setMsg("Espera " + resto + " s antes de enviar otra carátula.", "err");
-
-  const fence = "\x60\x60\x60";
-  const codigo = linea().split(fence).join("'''");
-  const fields = [
-    { name: "Título", value: titulo.slice(0, 1024) },
-    { name: "Enlace de descarga", value: url.slice(0, 1024) },
-    { name: "Título sobre la carátula", value: $("ocultar").checked ? "Oculto" : "Visible", inline: true }
-  ];
-  if (autor) fields.push({ name: "Enviado por", value: autor.slice(0, 100), inline: true });
-
-  const payload = {
-    username: "Carátulas",
-    allowed_mentions: { parse: [] },
-    embeds: [{
-      title: titulo.slice(0, 256),
-      url: url,
-      description: fence + "js\n" + codigo + "\n" + fence,
-      color: 0x2f6fed,
-      fields: fields,
-      image: { url: img },
-      timestamp: new Date().toISOString()
-    }]
-  };
 
   const btn = $("enviar");
   btn.disabled = true;
   setMsg("Enviando…");
   try {
-    const r = await fetch(WEBHOOK_URL.trim(), {
+    const r = await fetch(WORKER_URL.trim(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ titulo, url, img, autor, ocultar: $("ocultar").checked })
     });
+    let data = {};
+    try { data = await r.json(); } catch (e2) {}
     if (!r.ok) {
-      let detalle = "";
-      try { detalle = (await r.text()).slice(0, 300); } catch (e2) {}
       const err = new Error("HTTP " + r.status);
       err.status = r.status;
-      err.detalle = detalle;
+      err.detalle = data.error || "";
       throw err;
     }
     try { localStorage.setItem("ultimoEnvio", String(Date.now())); } catch (e) {}
     setMsg("¡Enviado! Gracias, revisaremos tu carátula.", "ok");
   } catch (e) {
-    console.error("Error al enviar a Discord:", e, e.detalle || "");
+    console.error("Error al enviar:", e, e.detalle || "");
     let txt;
-    if (e.status === 404 || e.status === 401) txt = "Discord no reconoce el webhook (" + e.status + "). Revisa que la URL esté completa y bien copiada, y que el webhook no haya sido borrado.";
-    else if (e.status === 400) txt = "Discord rechazó los datos (400): " + (e.detalle || "sin detalle");
-    else if (e.status === 429) txt = "Demasiados envíos seguidos. Espera un momento e inténtalo otra vez.";
-    else if (e.status) txt = "Discord respondió con error " + e.status + ". " + (e.detalle || "");
-    else txt = "No se pudo conectar con Discord. Puede ser la conexión o una extensión (bloqueador de anuncios) que bloquea la petición.";
+    if (e.status === 400 || e.status === 413) txt = "Datos no válidos: " + (e.detalle || "revisa los campos.");
+    else if (e.status === 403) txt = "Esta página no tiene permiso para enviar (origen no permitido en el Worker).";
+    else if (e.status) txt = "El servidor respondió con error " + e.status + ". " + (e.detalle || "");
+    else txt = "No se pudo conectar con el servidor. Revisa la URL del Worker o tu conexión.";
     setMsg(txt, "err");
   } finally {
     btn.disabled = false;
