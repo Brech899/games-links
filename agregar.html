@@ -93,7 +93,7 @@ const esc = s => s.trim().replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
 function linea() {
   const t = esc($("titulo").value), u = esc($("url").value), i = esc($("img").value);
-  return `  { titulo: "${t}", url: "${u}", img: "${i}", ocultarTitulo: ${$("ocultar").checked} },`;
+  return `{ titulo: "${t}", url: "${u}", img: "${i}", ocultarTitulo: ${$("ocultar").checked} },`;
 }
 
 function avisoHttps(valor, el) {
