@@ -82,6 +82,12 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
   25%,75%{transform:translateY(-18px)}
 }
 @media (prefers-reduced-motion: reduce){#cat-message{animation:none}}
+/* Tarjetas con varias opciones (botón) y ventana de opciones. */
+button.card{width:100%;padding:0;border:0;background:none;font:inherit;text-align:inherit;cursor:pointer}
+.opciones-lista{display:grid;gap:10px;margin-top:14px}
+.opcion{display:block;padding:12px 16px;border-radius:8px;background:#ff6b6b;color:#17161a;font-weight:700;text-align:center;text-decoration:none}
+.opcion:hover,.opcion:focus-visible{background:#ffd166}
+.opcion:focus-visible{outline:2px solid #fff;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -114,6 +120,12 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px 56px;
     <p>Los Juego no son testeados asi que no podemos garantizar que funcionen corractamente</p>
     <p>Por último, ten en cuenta que este sitio web fue desarrollado mediante <em>vibecoding</em>, por lo que existe una alta probabilidad de que encuentres errores (<em>bugs</em>) o problemas de funcionamiento.</p>
     
+    <form method="dialog" class="notice-actions"><button class="notice-close" type="submit">Cerrar</button></form>
+</dialog>
+<dialog class="notice" id="opciones-dialog" aria-labelledby="opciones-titulo">
+    <h2 id="opciones-titulo"></h2>
+    <p>Elige una opción:</p>
+    <div class="opciones-lista" id="opciones-lista"></div>
     <form method="dialog" class="notice-actions"><button class="notice-close" type="submit">Cerrar</button></form>
 </dialog>
 <footer id="page-end-image">
@@ -174,6 +186,11 @@ window.setTimeout(() => noticeDialog.showModal(), introDuration);
 
 // EDITA AQUÍ: título, enlace (url) y color (o imagen si la tienes incrustada)
   // { titulo: "", url: "", img: "", ocultarTitulo: false },
+// Para que una carátula muestre varias opciones al presionarla, agrega "opciones" (2 o más):
+  // { titulo: "Celeste", img: "https://...", ocultarTitulo: false, opciones: [
+  //     { nombre: "Descargar", url: "https://sitio-1.com" },
+  //     { nombre: "Ver gameplay", url: "https://sitio-2.com" } ] },
+// Si una carátula no tiene "opciones", se abre directamente su "url" como siempre.
 const items = [
   { titulo: "Among Us", url: "https://www.mediafire.com/file/2io1uhsjkdme5ae/Among%20Us_v19i_ElEnemigos.rar/file", img: "https://m.media-amazon.com/images/M/MV5BODI3ODMyZTgtZDdjYS00ZGRlLTg5YjMtNDY2ZjZlODg2NzYyXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", ocultarTitulo: false },
   { titulo: "Ultrakill", url: "https://www.mediafire.com/file/xlk0cb0la48t39i/ULTRAKILL_b22082969_ElEnemigos.rar/file", img: "https://assetsio.gnwcdn.com/co46s3.jpg?width=2048&height=2048&fit=bounds&quality=85&format=jpg&auto=webp", ocultarTitulo: false },
@@ -237,13 +254,41 @@ const items = [
   { titulo: "Potato Please", url: "https://filekeeper.net/t9pvuu4x892a/Potato_Please_b26422447_ElEnemigos.rar", img: "https://static-cdn.jtvnw.net/ttv-boxart/1514404776_IGDB-272x380.jpg", ocultarTitulo: false },
   { titulo: "DOOM 2016", url: "https://akirabox.com/E9Qz9vl0DGOL/file", img: "https://static.wikia.nocookie.net/wadguia/images/f/fc/D4_Doom_2016_portada.jpg/revision/latest?cb=20160630005906", ocultarTitulo: false },
   { titulo: "Goat Simulator", url: "https://www.mediafire.com/file/l95a2hqzriw1etl/Goat_Simulator_v.1.5.58533_ElEnemigos.rar/file", img: "https://m.media-amazon.com/images/M/MV5BZDk4MzQwMGYtNzBjZS00OWZjLWFhZjUtOGVhMjY0ZGIxZmQ1XkEyXkFqcGc@._V1_.jpg", ocultarTitulo: false },
-
+{ titulo: "Celeste", img: "https://...", ocultarTitulo: false, opciones: [
+    { nombre: "Descargar", url: "https://sitio-1.com" },
+    { nombre: "Ver gameplay", url: "https://sitio-2.com" },
+    {nombre: "nigga", url: "https://sitio-1.com" } ] },
 
 
 
 
 
 ];
+
+// Ventana con las opciones de una carátula.
+const opcionesDialog = document.getElementById("opciones-dialog");
+const opcionesTitulo = document.getElementById("opciones-titulo");
+const opcionesLista = document.getElementById("opciones-lista");
+function abrirOpciones(it) {
+  opcionesTitulo.textContent = it.titulo;
+  opcionesLista.textContent = "";
+  it.opciones.forEach((op, i) => {
+    const link = document.createElement("a");
+    link.className = "opcion";
+    link.href = op.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = op.nombre || ("Opción " + (i + 1));
+    link.addEventListener("click", () => opcionesDialog.close());
+    opcionesLista.appendChild(link);
+  });
+  opcionesDialog.showModal();
+}
+// Cierra la ventana al hacer clic fuera de ella.
+opcionesDialog.addEventListener("click", e => {
+  const r = opcionesDialog.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) opcionesDialog.close();
+});
 
 const grid = document.getElementById("grid");
 // Se descartan las entradas vacías, se ordenan alfabéticamente y se construye una tarjeta por juego.
@@ -263,11 +308,19 @@ items
     currentLetter = letter;
   }
 
-  const a = document.createElement("a");
+  // Con 2 o más "opciones" la tarjeta es un botón que abre la ventana; si no, es un enlace directo.
+  const conOpciones = Array.isArray(it.opciones) && it.opciones.length >= 2;
+  const a = document.createElement(conOpciones ? "button" : "a");
   a.className = "card";
-  a.href = it.url;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
+  if (conOpciones) {
+    a.type = "button";
+    a.setAttribute("aria-haspopup", "dialog");
+    a.addEventListener("click", () => abrirOpciones(it));
+  } else {
+    a.href = it.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+  }
   a.setAttribute("aria-label", it.titulo);
 
   const cover = document.createElement("div");

@@ -28,7 +28,7 @@ input[type=text]:focus{outline:2px solid var(--accent);border-color:transparent}
 .check{display:flex;gap:8px;align-items:center;margin:16px 0 0;font-weight:400}
 .warn{color:var(--warn);font-size:.85rem;margin:6px 0 0;min-height:1.1em}
 .out{margin-top:20px}
-textarea{width:100%;height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:.85rem ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+textarea{width:100%;height:110px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:.85rem ui-monospace,Menlo,Consolas,monospace;resize:vertical}
 .btns{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
 button{padding:10px 16px;border:0;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:#fff}
 button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
@@ -42,6 +42,13 @@ button.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .msg.ok{color:#2e7d32}
 .msg.err{color:var(--warn)}
 button:disabled{opacity:.6;cursor:wait}
+[hidden]{display:none !important}
+.opc{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:10px}
+.opc-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.opc-top strong{font-size:.9rem}
+.opc input{margin-top:8px}
+button.mini{padding:4px 10px;font-size:.8rem}
+.ayuda{margin:0 0 6px;color:var(--muted);font-size:.85rem}
 .cover .nota{position:absolute;inset:0;display:grid;place-items:center;padding:16px;text-align:center;color:#fff;font-size:.85rem;z-index:2}
 </style>
 </head>
@@ -55,9 +62,21 @@ button:disabled{opacity:.6;cursor:wait}
     <label for="titulo">Título del juego</label>
     <input type="text" id="titulo" placeholder="Ej: Celeste" autocomplete="off">
 
-    <label for="url">Enlace de descarga</label>
-    <input type="text" id="url" placeholder="https://..." autocomplete="off">
-    <div class="warn" id="warnUrl"></div>
+    <label class="check"><input type="checkbox" id="multi"> ¿Quieres agregar más de una opción? (varios enlaces para el mismo juego)</label>
+
+    <div id="bloqueUnico">
+      <label for="url">Enlace de descarga</label>
+      <input type="text" id="url" placeholder="https://..." autocomplete="off">
+      <div class="warn" id="warnUrl"></div>
+    </div>
+
+    <div id="bloqueMulti" hidden>
+      <label>Opciones (mínimo 2, máximo 5)</label>
+      <p class="ayuda">Al presionar la carátula se mostrará una ventana con un botón por cada opción.</p>
+      <div id="listaOpc"></div>
+      <div class="btns"><button type="button" class="sec" id="masOpc">+ Agregar otra opción</button></div>
+      <div class="warn" id="warnOpc"></div>
+    </div>
 
     <label for="img">Enlace directo de la imagen</label>
     <input type="text" id="img" placeholder="https://i.imgur.com/xxxx.jpg" autocomplete="off">
@@ -91,9 +110,58 @@ button:disabled{opacity:.6;cursor:wait}
 const $ = id => document.getElementById(id);
 const esc = s => s.trim().replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
+const MAX_OPC = 5;
+
+// Lee las opciones escritas: [{ nombre, url }]
+function opciones() {
+  return [...document.querySelectorAll("#listaOpc .opc")].map((el, i) => ({
+    nombre: el.querySelector(".opc-nombre").value.trim() || ("Opción " + (i + 1)),
+    url: el.querySelector(".opc-url").value.trim()
+  }));
+}
+
 function linea() {
-  const t = esc($("titulo").value), u = esc($("url").value), i = esc($("img").value);
-  return `{ titulo: "${t}", url: "${u}", img: "${i}", ocultarTitulo: ${$("ocultar").checked} },`;
+  const t = esc($("titulo").value), i = esc($("img").value), o = $("ocultar").checked;
+  if ($("multi").checked) {
+    const ops = opciones().map(op => `{ nombre: "${esc(op.nombre)}", url: "${esc(op.url)}" }`).join(", ");
+    return `{ titulo: "${t}", img: "${i}", ocultarTitulo: ${o}, opciones: [ ${ops} ] },`;
+  }
+  const u = esc($("url").value);
+  return `{ titulo: "${t}", url: "${u}", img: "${i}", ocultarTitulo: ${o} },`;
+}
+
+function renumerar() {
+  const filas = document.querySelectorAll("#listaOpc .opc");
+  filas.forEach((el, i) => {
+    el.querySelector("strong").textContent = "Opción " + (i + 1);
+    el.querySelector(".opc-nombre").placeholder = "Nombre del botón (Ej: Descargar)";
+    el.querySelector("button").hidden = filas.length <= 2; // mínimo 2 opciones
+  });
+  $("masOpc").disabled = filas.length >= MAX_OPC;
+}
+
+function nuevaOpcion(urlInicial) {
+  if (document.querySelectorAll("#listaOpc .opc").length >= MAX_OPC) return;
+  const d = document.createElement("div");
+  d.className = "opc";
+  const top = document.createElement("div");
+  top.className = "opc-top";
+  const st = document.createElement("strong");
+  const del = document.createElement("button");
+  del.type = "button";
+  del.className = "sec mini";
+  del.textContent = "Quitar";
+  del.addEventListener("click", () => { d.remove(); renumerar(); actualizar(); });
+  top.append(st, del);
+  const n = document.createElement("input");
+  n.type = "text"; n.className = "opc-nombre"; n.maxLength = 40; n.autocomplete = "off";
+  const u = document.createElement("input");
+  u.type = "text"; u.className = "opc-url"; u.placeholder = "https://..."; u.autocomplete = "off";
+  if (urlInicial) u.value = urlInicial;
+  [n, u].forEach(x => x.addEventListener("input", actualizar));
+  d.append(top, n, u);
+  $("listaOpc").appendChild(d);
+  renumerar();
 }
 
 function avisoHttps(valor, el) {
@@ -131,16 +199,30 @@ function dibujarPreview() {
   cont.appendChild(cover);
 }
 
-function actualizar(cambioImg) {
+function actualizar() {
+  const multi = $("multi").checked;
+  $("bloqueUnico").hidden = multi;
+  $("bloqueMulti").hidden = !multi;
   $("linea").value = linea();
   avisoHttps($("url").value, $("warnUrl"));
   avisoHttps($("img").value, $("warnImg"));
+  const malas = multi && opciones().some(op => op.url && !/^https:\/\//i.test(op.url));
+  $("warnOpc").textContent = malas ? "Todos los enlaces deben empezar con https://" : "";
   setMsg("");
   dibujarPreview();
 }
 
 ["titulo", "url", "img"].forEach(id => $(id).addEventListener("input", actualizar));
 $("ocultar").addEventListener("change", actualizar);
+$("masOpc").addEventListener("click", () => { nuevaOpcion(); actualizar(); });
+$("multi").addEventListener("change", () => {
+  if ($("multi").checked) {
+    // Al activar, se crean 2 filas y se reutiliza el enlace ya escrito como primera opción.
+    if (!document.querySelector("#listaOpc .opc")) nuevaOpcion($("url").value.trim());
+    while (document.querySelectorAll("#listaOpc .opc").length < 2) nuevaOpcion();
+  }
+  actualizar();
+});
 
 $("copiar").addEventListener("click", async () => {
   const texto = $("linea").value;
@@ -156,6 +238,9 @@ $("copiar").addEventListener("click", async () => {
 $("limpiar").addEventListener("click", () => {
   ["titulo", "url", "img"].forEach(id => $(id).value = "");
   $("ocultar").checked = false;
+  $("multi").checked = false;
+  $("listaOpc").textContent = "";
+  renumerar();
   actualizar();
 });
 
@@ -188,7 +273,15 @@ $("enviar").addEventListener("click", async () => {
   const autor = $("autor").value.trim();
 
   if (!titulo) return setMsg("Escribe el título del juego.", "err");
-  if (!esHttps(url)) return setMsg("El enlace de descarga debe ser un enlace válido que empiece con https://", "err");
+  const multi = $("multi").checked;
+  let ops = [];
+  if (multi) {
+    ops = opciones();
+    if (ops.length < 2) return setMsg("Agrega al menos 2 opciones.", "err");
+    if (ops.some(op => !esHttps(op.url))) return setMsg("Todos los enlaces de las opciones deben ser válidos y empezar con https://", "err");
+  } else if (!esHttps(url)) {
+    return setMsg("El enlace de descarga debe ser un enlace válido que empiece con https://", "err");
+  }
   if (!esHttps(img)) return setMsg("El enlace de la imagen debe ser un enlace válido que empiece con https://", "err");
   if (WORKER_URL === "PEGA_AQUI_LA_URL_DE_TU_WORKER") return setMsg("Falta configurar la URL del Worker en el código (WORKER_URL).", "err");
 
@@ -202,7 +295,9 @@ $("enviar").addEventListener("click", async () => {
     const r = await fetch(WORKER_URL.trim(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ titulo, url, img, autor, ocultar: $("ocultar").checked })
+      body: JSON.stringify(multi
+        ? { titulo, img, autor, ocultar: $("ocultar").checked, opciones: ops }
+        : { titulo, url, img, autor, ocultar: $("ocultar").checked })
     });
     let data = {};
     try { data = await r.json(); } catch (e2) {}
